@@ -13,6 +13,7 @@ const clearBtn = document.getElementById("clear-data");
 const downloadPdfBtn = document.getElementById("download-pdf");
 
 let records = loadRecords();
+let fallbackIdCounter = 0;
 setDefaultDate();
 renderAll();
 
@@ -35,7 +36,7 @@ form.addEventListener("submit", (event) => {
   const amountPaid = Math.min(Math.max(rawPaid, 0), totalPrice);
   const remainingAmount = roundTo2(totalPrice - amountPaid);
 
-  if (!customerName || !productName || !saleDate || units <= 0 || unitPrice < 0) {
+  if (!customerName || !productName || !saleDate || units <= 0 || unitPrice <= 0) {
     alert("Please enter valid details.");
     return;
   }
@@ -69,7 +70,7 @@ clearBtn.addEventListener("click", () => {
 
 downloadPdfBtn.addEventListener("click", () => {
   if (!window.jspdf || !window.jspdf.jsPDF) {
-    alert("PDF library is not loaded. Please check internet connection.");
+    alert("PDF library failed to load. Please refresh and try again.");
     return;
   }
 
@@ -165,7 +166,7 @@ function renderRecordsTable() {
         <td class="${record.paymentStatus === "Paid" ? "status-paid" : "status-unpaid"}">${record.paymentStatus}</td>
         <td>${formatCurrency(record.amountPaid)}</td>
         <td>${formatCurrency(record.remainingAmount)}</td>
-        <td><button type="button" class="row-action delete-record-btn" data-record-id="${escapeHtml(record.id)}">Delete</button></td>
+        <td><button type="button" class="row-action delete-record-btn" data-record-id="${record.id}">Delete</button></td>
       </tr>
     `
     )
@@ -261,7 +262,10 @@ function createRecordId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
-  return `id-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  fallbackIdCounter += 1;
+  const timestamp = Date.now();
+  const highRes = typeof performance !== "undefined" ? Math.floor(performance.now() * 1000) : 0;
+  return `id-${timestamp}-${highRes}-${fallbackIdCounter}`;
 }
 
 function escapeHtml(value) {
