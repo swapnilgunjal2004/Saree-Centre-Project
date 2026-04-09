@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shree Datta Saree Centre</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <h1>Shree Datta Saree Centre</h1>
+        <p>Simple sales and payment record tracker</p>
+      </header>
+
+      <section class="card">
+        <h2>Add Sale Entry</h2>
+        <form id="sale-form" class="grid-form">
+          <label>
+            Customer Name
+            <input id="customerName" type="text" required />
+          </label>
+          <label>
+            Product
+            <input id="productName" type="text" required />
+          </label>
+          <label>
+            Units
+            <input id="units" type="number" min="1" required />
+          </label>
+          <label>
+            Price per Unit (₹)
+            <input id="unitPrice" type="number" min="0" step="0.01" required />
+          </label>
+          <label>
+            Payment Status
+            <select id="paymentStatus" required>
+              <option value="Paid">Paid</option>
+              <option value="Unpaid">Unpaid</option>
+            </select>
+          </label>
+          <label>
+            Amount Paid (₹)
+            <input id="amountPaid" type="number" min="0" step="0.01" required />
+          </label>
+          <label>
+            Date
+            <input id="saleDate" type="date" required />
+          </label>
+          <div class="actions">
+            <button type="submit">Add Record</button>
+            <button id="clear-data" type="button" class="danger">Clear All</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="summary-header">
+          <h2>Business Summary</h2>
+          <button id="download-pdf" type="button">Download PDF</button>
+        </div>
+        <div id="totals" class="totals"></div>
+      </section>
+
+      <section class="card">
+        <h2>Sales Records</h2>
+        <div class="table-wrap">
+          <table id="records-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Product</th>
+                <th>Units</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Paid</th>
+                <th>Remaining</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Product-wise Sales</h2>
+        <div class="table-wrap">
+          <table id="product-summary-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Total Units Sold</th>
+                <th>Total Sales (₹)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
