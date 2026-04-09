@@ -69,56 +69,86 @@ clearBtn.addEventListener("click", () => {
 });
 
 downloadPdfBtn.addEventListener("click", () => {
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    alert("PDF library failed to load. Please refresh and try again.");
+  if (!records.length) {
+    alert("No records available to export.");
     return;
   }
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text("Shree Datta Saree Centre - Sales Report", 14, 16);
-
   const totals = calculateTotals(records);
-  doc.setFontSize(11);
-  doc.text(`Total Sales: ₹${totals.totalSales.toFixed(2)}`, 14, 26);
-  doc.text(`Total Paid: ₹${totals.totalPaid.toFixed(2)}`, 14, 32);
-  doc.text(`Total Remaining: ₹${totals.totalRemaining.toFixed(2)}`, 14, 38);
+  const productRows = Object.values(buildProductSummary(records));
+  const popup = window.open("", "_blank", "width=1000,height=800");
+  if (!popup) {
+    alert("Please allow popups to export as PDF.");
+    return;
+  }
 
-  const tableRows = records.map((r) => [
-    r.saleDate,
-    r.customerName,
-    r.productName,
-    String(r.units),
-    formatCurrency(r.unitPrice),
-    formatCurrency(r.totalPrice),
-    r.paymentStatus,
-    formatCurrency(r.amountPaid),
-    formatCurrency(r.remainingAmount),
-  ]);
-
-  doc.autoTable({
-    startY: 44,
-    head: [["Date", "Customer", "Product", "Units", "Unit Price", "Total", "Status", "Paid", "Remaining"]],
-    body: tableRows,
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [31, 41, 55] },
-  });
-
-  const productRows = Object.values(buildProductSummary(records)).map((item) => [
-    item.productName,
-    String(item.totalUnits),
-    formatCurrency(item.totalSales),
-  ]);
-
-  doc.autoTable({
-    head: [["Product", "Total Units Sold", "Total Sales"]],
-    body: productRows,
-    styles: { fontSize: 9 },
-    headStyles: { fillColor: [17, 24, 39] },
-  });
-
-  doc.save("shree-datta-saree-centre-report.pdf");
+  popup.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Shree Datta Saree Centre - Sales Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #111; margin: 20px; }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    .meta { margin-bottom: 16px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+    th, td { border: 1px solid #bbb; padding: 6px; text-align: left; }
+    th { background: #eee; }
+    @media print { button { display: none; } }
+  </style>
+</head>
+<body>
+  <h1>Shree Datta Saree Centre - Sales Report</h1>
+  <div class="meta">
+    <div>Total Sales: ${formatCurrency(totals.totalSales)}</div>
+    <div>Total Paid: ${formatCurrency(totals.totalPaid)}</div>
+    <div>Total Remaining: ${formatCurrency(totals.totalRemaining)}</div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th><th>Customer</th><th>Product</th><th>Units</th><th>Unit Price</th><th>Total</th><th>Status</th><th>Paid</th><th>Remaining</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${records
+        .map(
+          (r) => `<tr>
+        <td>${escapeHtml(r.saleDate)}</td>
+        <td>${escapeHtml(r.customerName)}</td>
+        <td>${escapeHtml(r.productName)}</td>
+        <td>${r.units}</td>
+        <td>${formatCurrency(r.unitPrice)}</td>
+        <td>${formatCurrency(r.totalPrice)}</td>
+        <td>${escapeHtml(r.paymentStatus)}</td>
+        <td>${formatCurrency(r.amountPaid)}</td>
+        <td>${formatCurrency(r.remainingAmount)}</td>
+      </tr>`
+        )
+        .join("")}
+    </tbody>
+  </table>
+  <h2>Product-wise Sales</h2>
+  <table>
+    <thead>
+      <tr><th>Product</th><th>Total Units Sold</th><th>Total Sales</th></tr>
+    </thead>
+    <tbody>
+      ${productRows
+        .map(
+          (row) => `<tr>
+        <td>${escapeHtml(row.productName)}</td>
+        <td>${row.totalUnits}</td>
+        <td>${formatCurrency(row.totalSales)}</td>
+      </tr>`
+        )
+        .join("")}
+    </tbody>
+  </table>
+  <script>window.onload = () => window.print();<\/script>
+</body>
+</html>`);
+  popup.document.close();
 });
 
 recordsTbody.addEventListener("click", (event) => {
@@ -211,7 +241,7 @@ function buildProductSummary(data) {
   return data.reduce((acc, record) => {
     const key = record.productName.toLowerCase();
     if (!acc[key]) {
-      acc[key] = { productName: record.productName, totalUnits: 0, totalSales: 0 };
+      acc[key] = { productName: toTitleCase(key), totalUnits: 0, totalSales: 0 };
     }
     acc[key].totalUnits += record.units;
     acc[key].totalSales += record.totalPrice;
@@ -265,7 +295,8 @@ function createRecordId() {
   fallbackIdCounter += 1;
   const timestamp = Date.now();
   const highRes = typeof performance !== "undefined" ? Math.floor(performance.now() * 1000) : 0;
-  return `id-${timestamp}-${highRes}-${fallbackIdCounter}`;
+  const entropy = Math.floor(Math.random() * 1_000_000_000);
+  return `id-${timestamp}-${highRes}-${fallbackIdCounter}-${entropy}`;
 }
 
 function escapeHtml(value) {
@@ -275,4 +306,8 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function toTitleCase(text) {
+  return text.replace(/\b\w/g, (char) => char.toUpperCase());
 }
