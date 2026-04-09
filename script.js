@@ -1,4 +1,5 @@
 const STORAGE_KEY = "shree_datta_saree_centre_records";
+const ID_COUNTER_KEY = "shree_datta_saree_centre_id_counter";
 
 const form = document.getElementById("sale-form");
 const paymentStatusInput = document.getElementById("paymentStatus");
@@ -13,7 +14,7 @@ const clearBtn = document.getElementById("clear-data");
 const downloadPdfBtn = document.getElementById("download-pdf");
 
 let records = loadRecords();
-let fallbackIdCounter = 0;
+let fallbackIdCounter = loadFallbackCounter();
 setDefaultDate();
 renderAll();
 
@@ -239,9 +240,9 @@ function calculateTotals(data) {
 
 function buildProductSummary(data) {
   return data.reduce((acc, record) => {
-    const key = record.productName.toLowerCase();
+    const key = record.productName.trim().toLowerCase();
     if (!acc[key]) {
-      acc[key] = { productName: toTitleCase(key), totalUnits: 0, totalSales: 0 };
+      acc[key] = { productName: record.productName.trim(), totalUnits: 0, totalSales: 0 };
     }
     acc[key].totalUnits += record.units;
     acc[key].totalSales += record.totalPrice;
@@ -293,10 +294,11 @@ function createRecordId() {
     return crypto.randomUUID();
   }
   fallbackIdCounter += 1;
+  saveFallbackCounter(fallbackIdCounter);
   const timestamp = Date.now();
-  const highRes = typeof performance !== "undefined" ? Math.floor(performance.now() * 1000) : 0;
+  const highResTimestamp = typeof performance !== "undefined" ? Math.floor(performance.now() * 1000) : 0;
   const entropy = Math.floor(Math.random() * 1_000_000_000);
-  return `id-${timestamp}-${highRes}-${fallbackIdCounter}-${entropy}`;
+  return `id-${timestamp}-${highResTimestamp}-${fallbackIdCounter}-${entropy}`;
 }
 
 function escapeHtml(value) {
@@ -308,6 +310,11 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function toTitleCase(text) {
-  return text.replace(/\b\w/g, (char) => char.toUpperCase());
+function loadFallbackCounter() {
+  const raw = Number(localStorage.getItem(ID_COUNTER_KEY) || 0);
+  return Number.isFinite(raw) && raw >= 0 ? raw : 0;
+}
+
+function saveFallbackCounter(value) {
+  localStorage.setItem(ID_COUNTER_KEY, String(value));
 }
