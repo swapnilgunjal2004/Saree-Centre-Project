@@ -41,7 +41,7 @@ form.addEventListener("submit", (event) => {
   }
 
   records.push({
-    id: crypto.randomUUID(),
+    id: createRecordId(),
     saleDate,
     customerName,
     productName,
@@ -120,6 +120,16 @@ downloadPdfBtn.addEventListener("click", () => {
   doc.save("shree-datta-saree-centre-report.pdf");
 });
 
+recordsTbody.addEventListener("click", (event) => {
+  const deleteBtn = event.target.closest(".delete-record-btn");
+  if (!deleteBtn) return;
+  const { recordId } = deleteBtn.dataset;
+  if (!recordId) return;
+  records = records.filter((item) => item.id !== recordId);
+  saveRecords(records);
+  renderAll();
+});
+
 function renderAll() {
   renderTotals();
   renderRecordsTable();
@@ -155,7 +165,7 @@ function renderRecordsTable() {
         <td class="${record.paymentStatus === "Paid" ? "status-paid" : "status-unpaid"}">${record.paymentStatus}</td>
         <td>${formatCurrency(record.amountPaid)}</td>
         <td>${formatCurrency(record.remainingAmount)}</td>
-        <td><button type="button" class="row-action" onclick="deleteRecord('${record.id}')">Delete</button></td>
+        <td><button type="button" class="row-action delete-record-btn" data-record-id="${escapeHtml(record.id)}">Delete</button></td>
       </tr>
     `
     )
@@ -247,6 +257,13 @@ function roundTo2(value) {
   return Number(value.toFixed(2));
 }
 
+function createRecordId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -255,9 +272,3 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
-
-window.deleteRecord = function deleteRecord(recordId) {
-  records = records.filter((item) => item.id !== recordId);
-  saveRecords(records);
-  renderAll();
-};
