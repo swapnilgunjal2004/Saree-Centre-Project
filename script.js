@@ -1,5 +1,7 @@
 const STORAGE_KEY = "shree_datta_saree_centre_records";
 const ID_COUNTER_KEY = "shree_datta_saree_centre_id_counter";
+const MICROSECONDS_PER_MILLISECOND = 1000;
+const MAX_ID_ENTROPY = 1_000_000_000;
 
 const form = document.getElementById("sale-form");
 const paymentStatusInput = document.getElementById("paymentStatus");
@@ -34,7 +36,7 @@ form.addEventListener("submit", (event) => {
 
   const totalPrice = roundTo2(units * unitPrice);
   const rawPaid = Number(amountPaidInput.value);
-  const amountPaid = Math.min(Math.max(rawPaid, 0), totalPrice);
+  const amountPaid = clampNumber(rawPaid, 0, totalPrice);
   const remainingAmount = roundTo2(totalPrice - amountPaid);
 
   if (!customerName || !productName || !saleDate || units <= 0 || unitPrice <= 0) {
@@ -296,8 +298,11 @@ function createRecordId() {
   fallbackIdCounter += 1;
   saveFallbackCounter(fallbackIdCounter);
   const timestamp = Date.now();
-  const highResTimestamp = typeof performance !== "undefined" ? Math.floor(performance.now() * 1000) : 0;
-  const entropy = Math.floor(Math.random() * 1_000_000_000);
+  const highResTimestamp =
+    typeof performance !== "undefined"
+      ? Math.floor(performance.now() * MICROSECONDS_PER_MILLISECOND)
+      : 0;
+  const entropy = Math.floor(Math.random() * MAX_ID_ENTROPY);
   return `id-${timestamp}-${highResTimestamp}-${fallbackIdCounter}-${entropy}`;
 }
 
@@ -317,4 +322,8 @@ function loadFallbackCounter() {
 
 function saveFallbackCounter(value) {
   localStorage.setItem(ID_COUNTER_KEY, String(value));
+}
+
+function clampNumber(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }
